@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Village Walk Knowledge Quiz</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #e8edf2, #d0d8e4);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .container { max-width: 680px; width: 100%; }
+
+    h1 { text-align: center; color: #1e293b; font-size: 1.5rem; margin-bottom: 4px; }
+    .subtitle { text-align: center; color: #64748b; font-size: 0.85rem; margin-bottom: 20px; }
+
+    /* Filter buttons */
+    .filters {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      justify-content: center; margin-bottom: 20px;
+    }
+    .filter-btn {
+      font-size: 0.75rem; padding: 6px 14px; border-radius: 999px;
+      border: 1.5px solid #cbd5e1; background: white; color: #475569;
+      cursor: pointer; font-weight: 600; transition: all 0.2s;
+    }
+    .filter-btn.active { background: #1e293b; color: white; border-color: #1e293b; }
+    .filter-btn:hover:not(.active) { border-color: #94a3b8; }
+
+    /* Card */
+    .card {
+      background: white; border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 28px; border: 2px solid #e2e8f0;
+    }
+
+    /* Progress bar */
+    .progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .badge {
+      font-size: 0.7rem; font-weight: 700; padding: 4px 12px;
+      border-radius: 999px; letter-spacing: 0.02em;
+    }
+    .badge-fees    { background: #d1fae5; color: #065f46; }
+    .badge-lease   { background: #dbeafe; color: #1e40af; }
+    .badge-viol    { background: #fef3c7; color: #92400e; }
+    .badge-ar      { background: #ede9fe; color: #5b21b6; }
+    .badge-sales   { background: #ffe4e6; color: #9f1239; }
+    .badge-comm    { background: #fef9c3; color: #713f12; }
+    .badge-arch    { background: #e0f2fe; color: #0c4a6e; }
+    .badge-hot     { background: #f3e8ff; color: #581c87; }
+    .badge-forms   { background: #fff7ed; color: #7c2d12; }
+    .badge-comm    { background: #fce7f3; color: #9d174d; }
+    .badge-acc     { background: #ffedd5; color: #9a3412; }
+    .badge-hw      { background: #e0f2fe; color: #075985; }
+    .badge-forms   { background: #f0fdf4; color: #14532d; }
+    .score-text { font-size: 0.8rem; color: #64748b; font-weight: 600; }
+    .progress-bar { background: #e2e8f0; border-radius: 999px; height: 6px; margin-bottom: 20px; }
+    .progress-fill { background: #1e293b; height: 6px; border-radius: 999px; transition: width 0.4s; }
+
+    /* Scenario box */
+    .scenario-box {
+      background: #f8fafc; border-radius: 12px; padding: 14px 16px;
+      margin-bottom: 16px; border: 1px solid #e2e8f0;
+    }
+    .scenario-label { font-size: 0.68rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+    .scenario-text { color: #374151; font-size: 0.9rem; line-height: 1.55; }
+
+    .question { font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 16px; }
+
+    /* Options */
+    .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .option-btn {
+      text-align: left; padding: 12px 16px; border-radius: 12px;
+      border: 2px solid #e2e8f0; background: #f8fafc; color: #374151;
+      font-size: 0.88rem; cursor: pointer; transition: all 0.15s; width: 100%;
+      line-height: 1.4;
+    }
+    .option-btn:hover:not(:disabled) { border-color: #94a3b8; background: #f1f5f9; }
+    .option-btn .letter { font-weight: 800; margin-right: 8px; }
+    .option-btn.correct   { background: #d1fae5; border-color: #34d399; color: #064e3b; font-weight: 600; }
+    .option-btn.wrong     { background: #fee2e2; border-color: #f87171; color: #7f1d1d; }
+    .option-btn.dimmed    { opacity: 0.45; }
+    .option-btn:disabled  { cursor: default; }
+
+    /* Explanation */
+    .explanation {
+      background: #f8fafc; border-radius: 12px; padding: 14px 16px;
+      margin-bottom: 16px; border: 1px solid #e2e8f0;
+    }
+    .explanation-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .explanation-label.ok  { color: #059669; }
+    .explanation-label.err { color: #dc2626; }
+    .explanation-text { font-size: 0.88rem; color: #374151; line-height: 1.55; }
+
+    /* Buttons */
+    .next-btn, .restart-btn {
+      width: 100%; padding: 14px; border-radius: 12px;
+      background: #1e293b; color: white; font-size: 0.95rem;
+      font-weight: 700; border: none; cursor: pointer; transition: background 0.2s;
+    }
+    .next-btn:hover, .restart-btn:hover { background: #0f172a; }
+
+    /* Results */
+    .results { text-align: center; }
+    .big-score { font-size: 4rem; font-weight: 800; margin-bottom: 6px; }
+    .score-green { color: #059669; }
+    .score-amber { color: #d97706; }
+    .score-red   { color: #dc2626; }
+    .result-sub  { color: #475569; font-size: 1rem; margin-bottom: 6px; }
+    .result-msg  { color: #94a3b8; font-size: 0.88rem; margin-bottom: 24px; }
+    .answer-list { text-align: left; margin-bottom: 24px; display: flex; flex-direction: column; gap: 8px; }
+    .answer-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px; border-radius: 10px; font-size: 0.83rem; line-height: 1.4;
+    }
+    .answer-item.ok  { background: #d1fae5; color: #065f46; }
+    .answer-item.err { background: #fee2e2; color: #7f1d1d; }
+    .answer-icon { flex-shrink: 0; font-size: 1rem; margin-top: 1px; }
+    .answer-cat  { font-weight: 700; }
+
+    @media (max-width: 500px) {
+      .card { padding: 18px; }
+      h1 { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Village Walk Knowledge Quiz</h1>
+  <p class="subtitle">KW Property Management &bull; Scenario-Based Training</p>
+
+  <div class="filters" id="filters"></div>
+  <div class="card" id="card"></div>
+</div>
+
+<script>
+const questions = [
+  { cat:"💰 Fees & Applications", badge:"badge-fees",
+    scenario:"A homeowner calls asking how much they need to bring for a lease application for 2 applicants and 1 vehicle.",
+    question:"What is the total they should bring?",
+    options:["$150","$165","$190","$125"], correct:2,
+    explanation:"$125 processing fee + $25 per applicant (×2 = $50) + $15 per vehicle = $190 total." },
+
+  { cat:"💰 Fees & Applications", badge:"badge-fees",
+    scenario:"A resident wants to pay their application fees with cash.",
+    question:"What do you tell them?",
+    options:["Cash is fine, no problem","Cash accepted only for transponders","Payments are Check or Card ONLY","Cash accepted with a fee"], correct:2,
+    explanation:"Payments are Check or Card ONLY — cash is never accepted. Card payments also carry a processing fee." },
+
+  { cat:"💰 Fees & Applications", badge:"badge-fees",
+    scenario:"Someone asks who their check should be made payable to for their HOA application.",
+    question:"What is the correct payee?",
+    options:["KW Property Management","Village Walk of Naples Community","Village Walk of Naples HOA","Village Walk HOA Board of Directors"], correct:2,
+    explanation:"All checks must be made payable to Village Walk of Naples HOA — this applies to all applications." },
+
+  { cat:"💰 Fees & Applications", badge:"badge-fees",
+    scenario:"A new tenant forgot to pay for their 2 vehicle transponders at the time of application.",
+    question:"How much do they owe, and what payment methods are accepted?",
+    options:["$30, cash or card","$15, check or card only","$30, check or card only (card has a fee)","$25, check only"], correct:2,
+    explanation:"$15 per transponder × 2 = $30. Check or card only — card incurs a processing fee." },
+
+  { cat:"📋 Leases & Renewals", badge:"badge-lease",
+    scenario:"A tenant asks when they need to submit their lease renewal application.",
+    question:"What is the deadline?",
+    options:["60 days before lease ends","At least 30 days before lease ends","15 days before lease ends","Anytime before the lease ends"], correct:1,
+    explanation:"Per the Certificate of Lease Approval: a renewal application and updated lease must be submitted at least 30 days before the current lease ends." },
+
+  { cat:"📋 Leases & Renewals", badge:"badge-lease",
+    scenario:"You're processing a lease renewal in KWIC. The tenant already exists in the system.",
+    question:"What specifically needs to be updated in KWIC for a renewal?",
+    options:["Delete and re-add the tenant","Change the lease dates to the new dates","Create a new application from scratch","Update user type to Owner"], correct:1,
+    explanation:"For a renewal, change the lease dates to the new dates in KWIC. In Zuul Systems, you also extend the date." },
+
+  { cat:"📋 Leases & Renewals", badge:"badge-lease",
+    scenario:"You're reviewing a lease application to determine if it's ready for the Certificate of Approval to go to the BOD President or VP.",
+    question:"Which of the following is NOT a requirement before preparing the Certificate of Approval?",
+    options:["Fees collected and processed through ClickPay","Homeowner ledger confirmed at $0.00","Background check cleared","Warranty Deed received from the homeowner"], correct:3,
+    explanation:"The Warranty Deed is only relevant for Sales applications post-closing — it has no part in the lease approval process. All other options (fees paid, $0.00 ledger, and cleared background check) ARE required before the Certificate goes to the BOD." },
+
+  { cat:"⚠️ Violations", badge:"badge-viol",
+    scenario:"The Fine Hearing Meeting is scheduled for December 12th. You need to send the 2nd violation letter.",
+    question:"What is the LATEST date you can send the 2nd letter?",
+    options:["December 11th","December 5th","November 28th","November 30th"], correct:2,
+    explanation:"The 2nd letter CANNOT be sent less than 2 weeks before the meeting. Dec 12 minus 2 weeks = November 28th is the absolute deadline." },
+
+  { cat:"⚠️ Violations", badge:"badge-viol",
+    scenario:"You're preparing packets for an upcoming Fine Hearing Meeting with 3 jury members.",
+    question:"How many total packets do you need to make?",
+    options:["3","4","5","6"], correct:2,
+    explanation:"5 total: 3 for the jury, 1 for yourself, and 1 for the manager." },
+
+  { cat:"⚠️ Violations", badge:"badge-viol",
+    scenario:"The jury approved a fine after the hearing. You need to notify the resident.",
+    question:"How must the 3rd violation letter be sent?",
+    options:["Regular mail","Email only","Certified Mail","Hand delivered"], correct:2,
+    explanation:"After jury approval, the 3rd letter MUST be sent via Certified Mail. Also check if the mailing address differs from the Village Walk address." },
+
+  { cat:"⚠️ Violations", badge:"badge-viol",
+    scenario:"A resident calls and asks you personally to grant them a 30-day extension on their violation.",
+    question:"What do you tell them?",
+    options:["Sure, I can approve that","I'll check with the manager","The office cannot grant extensions — only the jury can approve or deny fines","Extensions require a written request"], correct:2,
+    explanation:"The office cannot grant extensions, approve or deny fines. The final determination rests solely with the jury. You can document their communication, which may weigh positively." },
+
+  { cat:"⚠️ Violations", badge:"badge-viol",
+    scenario:"You need to notify the community about an upcoming Fine Hearing Meeting.",
+    question:"How far in advance must you notify them?",
+    options:["24 hours","48 hours","72 hours","1 week"], correct:1,
+    explanation:"The community must be notified 48 hours in advance of the Fine Hearing Meeting." },
+
+  { cat:"🏦 Accounts Receivable", badge:"badge-ar",
+    scenario:"You receive an FPL utility bill for The Village Spot.",
+    question:"Where do you send it, and what must be attached?",
+    options:["payables@ipre.com, nothing extra","thevillagespot239@gmail.com with FPL and CCU statements attached","villagewalkhoaofnaples@kwpmc.com with the bill","thevillagespot239@gmail.com, no attachments"], correct:1,
+    explanation:"Village Spot FPL and CCU invoices go to thevillagespot239@gmail.com. Always attach both the FPL and CCU statements." },
+
+  { cat:"🏦 Accounts Receivable", badge:"badge-ar",
+    scenario:"It's the first of the month. You need to send the rent invoice for Illustrated Properties.",
+    question:"What email address does this invoice go to?",
+    options:["thevillagespot239@gmail.com","villagewalkhoaofnaples@kwpmc.com","payables@ipre.com","illustratedproperties@kwpmc.com"], correct:2,
+    explanation:"Illustrated Properties rent invoices are sent to payables@ipre.com. Rent is due on the 1st — only the billing dates change, the amount stays the same." },
+
+  { cat:"🏠 Sales Applications", badge:"badge-sales",
+    scenario:"A sale just closed. The new buyer asks what documents they need to send you post-closing.",
+    question:"What two documents do you need from them?",
+    options:["Driver's License and Signed Contract","Warranty Deed and Settlement Statement","Background Check and Sales Contract","Settlement Statement and HOA Application"], correct:1,
+    explanation:"Post-closing you need the Warranty Deed and Settlement Statement to transfer the account to the new homeowner." },
+
+  { cat:"🏠 Sales Applications", badge:"badge-sales",
+    scenario:"You're uploading a completed sale application to KWIC Documents.",
+    question:"How should you title the document?",
+    options:["Sale Application + Date","Last Name(s) Sale Application, Year","Address + Sale Application","Buyer Name + Closing Date"], correct:1,
+    explanation:"Title format is: Last Name(s) Sale Application, Year — e.g., 'Smith Sale Application, 2025'." },
+  // ── COMMUNITY POLICIES ──
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A real estate agent calls asking where they can place open house signs in Village Walk.",
+    question:"What are the three permitted locations for open house signs?",
+    options:["Anywhere on Village Walk Circle","Vanderbilt Beach Rd entrance, corner of Village Walk Circle and the open house street, and in front of the open house property","Only in front of the open house property","At every intersection within the community"], correct:1,
+    explanation:"Signs are permitted at: (1) the Vanderbilt Beach Road community entrance, (2) the corner of Village Walk Circle and the street where the open house is, and (3) directly in front of the open house property. One sign per location per agent/agency/owner." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A realtor asks what days and hours they can hold an open house at Village Walk.",
+    question:"When are open house events permitted?",
+    options:["Any day, 8am–6pm","Weekdays only, 9am–5pm","Saturdays and Sundays only, 9am–4pm","Fridays through Sundays, 10am–5pm"], correct:2,
+    explanation:"Open House events are permitted on Saturdays and Sundays only, from 9am to 4pm, per the Village Walk Open House Signage Policy." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A realtor wants to place 3 signs at the Vanderbilt Beach Road entrance to stand out more.",
+    question:"How many signs are permitted per location per agent?",
+    options:["As many as needed","Two signs maximum","One sign per location per agent/agency/owner","Three signs at the main entrance only"], correct:2,
+    explanation:"Only one sign per location is permitted per agent/agency/owner. This applies to each of the three permitted locations." },
+
+  // ── ACC & ARCHITECTURE ──
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner gets ACC approval for a landscaping project but hasn't started after 7 months.",
+    question:"What is the time limit to complete approved ACC changes?",
+    options:["3 months","6 months from the date of approval","12 months","No time limit as long as they notify the office"], correct:1,
+    explanation:"Homeowners have 6 months from the date of approval to complete all approved changes. If not finished, they must re-apply or notify the Town Manager of the delay." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner calls asking if they can install a wood privacy fence around their backyard.",
+    question:"What is Village Walk's policy on fences?",
+    options:["Fences up to 4 feet are permitted with ACC approval","Only white vinyl fences are permitted","No fence of any height or style is permitted","Fences are allowed on rear of property only"], correct:2,
+    explanation:"Per the ACC Architectural Planning Criteria: no fence of any height or style is permitted in Village Walk, without exception." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner wants to make changes to their landscaping — add new plants and remove a small tree.",
+    question:"What is required before ANY landscape change can begin?",
+    options:["Just notify the office by phone","Submit a Landscape Change Application and receive prior written approval from the Landscape Committee","Get neighbor's permission only","Nothing — minor landscaping doesn't need approval"], correct:1,
+    explanation:"All landscape changes, regardless of scope, require submitting a Landscape Change Application and receiving prior written approval from the Landscape Committee before work begins. A plot plan must also accompany the form." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner is replacing their roof and asks what tile they must use.",
+    question:"Which of the following is an approved roof tile option for Village Walk?",
+    options:["Any gray or brown Spanish tile","Santa Fe Spanish 'S' Clay tile: 40% Red, 40% Peach, 20% Coffee","Flat concrete tile in terracotta","Any tile matching the original color"], correct:1,
+    explanation:"Two approved options: (1) Santa Fe Spanish 'S' Clay tile — 40% Red, 40% Peach, 20% Coffee; or (2) Verea Spanish 'S' tile — 40% Red, 40% Peach, 20% Graphite. Both must be installed in a random non-repeating mix pattern." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner wants to install a freestanding flagpole in their front yard.",
+    question:"What is the maximum height allowed for a freestanding flagpole?",
+    options:["10 feet","15 feet","20 feet","25 feet"], correct:1,
+    explanation:"Any homeowner may erect a freestanding flagpole no more than 15 feet high on their real property, provided it does not obstruct sightlines at intersections or sit within an easement." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner is installing new coach lights and asks what size and color the frame must be.",
+    question:"What are the ACC requirements for coach lights?",
+    options:["Max 18in wide, 36in tall, any dark color","Max 12in wide, 24in tall — frame must be black, dark brown, or dark green","Max 10in wide, 20in tall, white frame only","No restrictions as long as they match the house"], correct:1,
+    explanation:"Coach light criteria: maximum width 12 inches, maximum height 24 inches, installed with the longest dimension vertically. Frame must be black, dark brown, or dark green. Glass panels cannot be colored." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner asks what color window tinting film must be if they want to add it to their windows.",
+    question:"What is the required color for window tinting or security film?",
+    options:["Any color as long as it's not mirrored","Charcoal — and windows must not have a mirrored look from outside","Clear or lightly tinted only","Bronze or gray only"], correct:1,
+    explanation:"Window tinting and security film must be charcoal in color. When viewed from the exterior, the windows must not have a mirrored look." },
+
+  // ── HOTWIRE SERVICES ──
+
+  { cat:"📡 HotWire Services", badge:"badge-hot",
+    scenario:"A new resident calls asking what internet and cable services are included with their HOA at Village Walk.",
+    question:"Which of the following is included at no extra charge through HotWire?",
+    options:["Gigabit Internet 1000 and all premium channels","High Speed Internet 300, Digital Favorites TV Package, 1 Fision HD Box, and HBO & Encore","Internet 500 and the Works Package","Only basic channels, no internet"], correct:1,
+    explanation:"Included at no extra cost: Expanded Basic TV, Digital Favorites Package, 1 Fision HD Box, HD Service, Multi-Room DVR Service, HBO and Encore, High Speed Internet 300 (300 Mbps up/down), and an Eero Pro 6E Router." },
+
+  { cat:"📡 HotWire Services", badge:"badge-hot",
+    scenario:"A resident wants to upgrade their internet speed beyond what's included.",
+    question:"What is the monthly cost for High Speed Internet 500?",
+    options:["$24.99/mo","$34.99/mo","$54.99/mo","$74.99/mo"], correct:1,
+    explanation:"High Speed Internet 500 (500 Mbps download/upload) is $34.99/mo. The 750 Mbps tier is $54.99/mo, and Gigabit 1000 is $74.99/mo." },
+
+  { cat:"📡 HotWire Services", badge:"badge-hot",
+    scenario:"A resident needs to call HotWire directly for tech support on their cable box.",
+    question:"What is HotWire's customer support phone number?",
+    options:["(239) 594-8044","(800) 355-5668","(888) 469-8722","(800) 266-2278"], correct:1,
+    explanation:"HotWire customer support can be reached at (800) 355-5668 or at gethotwired.com/support. Note: (239) 594-8044 is the Village Walk HOA office number — don't confuse the two." },
+
+  { cat:"📡 HotWire Services", badge:"badge-hot",
+    scenario:"A resident wants to record their favorite shows. They ask about the DVR box rental.",
+    question:"How much is the Fision HD/DVR Box per month, and is there a limit?",
+    options:["$9.99/mo, no limit","$15.99/mo, limit one DVR per household","$12.99/mo, up to two per household","$19.99/mo, one per TV"], correct:1,
+    explanation:"The Fision HD/DVR Box is $15.99/mo. There is a limit of one DVR per household. Standard HD Boxes (no DVR) are $9.99/mo each." },
+
+  // ── AR FORMS ──
+
+  { cat:"📝 AR Forms", badge:"badge-forms",
+    scenario:"A resident overpaid their HOA dues and is owed a refund check. Your manager asks you to process it.",
+    question:"What form do you use to request a refund check be issued to a resident?",
+    options:["Authorized Unit Charges Form","Late Fee Waiver Form","AR Check Requisition Form","Check Transmittal Log"], correct:2,
+    explanation:"The AR Check Requisition Form (AR.03) is used to request a check be issued — for example, for a credit balance due to overpayment, a check submitted while enrolled in ACH, or other specific purposes listed on the form." },
+
+  { cat:"📝 AR Forms", badge:"badge-forms",
+    scenario:"A resident is requesting a late fee be waived. The total late fees on their account are $150.",
+    question:"What is required when waiving late fees over $100?",
+    options:["Manager approval only","Board of Director approval must be obtained","No additional approval needed","Both manager and resident must sign"], correct:1,
+    explanation:"Per the Late Fee Waiver Form (AR.05): if waiving late fees in excess of $100, Board of Director approval must be obtained. You must also attach a copy of the resident ledger with the late fees circled." },
+
+  { cat:"📝 AR Forms", badge:"badge-forms",
+    scenario:"You're processing a Late Fee Waiver request. You've filled out the form — what must you attach before sending it?",
+    question:"What must accompany the Late Fee Waiver Form?",
+    options:["A copy of the original payment check","A copy of the resident ledger with the late fees circled","The resident's written explanation only","Nothing — the form is self-contained"], correct:1,
+    explanation:"The Late Fee Waiver Form requires a copy of the resident ledger attached, with the specific late fees to be waived clearly circled. The completed request is then sent to your Accounts Receivables Associate." },
+
+  { cat:"📝 AR Forms", badge:"badge-forms",
+    scenario:"After a Fine Hearing Meeting, the jury approved a fine. You need to post the charge to the owner's account.",
+    question:"What form do you use to charge an owner's account for expenses other than regular assessments?",
+    options:["AR Check Requisition Form","Late Fee Waiver Form","Authorized Unit Charges Form","Check Transmittal Log"], correct:2,
+    explanation:"The Authorized Unit Charges Form (AR.19) is used to charge an owner's account for expenses other than assessments — such as approved fines after a Fine Hearing. Supporting documentation must be attached, or Board approval is required if no documentation exists." },
+
+  { cat:"📝 AR Forms", badge:"badge-forms",
+    scenario:"You're filling out an Authorized Unit Charges Form but don't have any supporting documentation for the charge.",
+    question:"What is required on the Authorized Unit Charges Form when no supporting documentation is provided?",
+    options:["Manager signature only","Board Member approval is required","The resident must sign acknowledging the charge","No additional steps — submit as is"], correct:1,
+    explanation:"If no supporting documentation (meeting minutes, invoices, resolutions, etc.) is provided with the Authorized Unit Charges Form, Board Member approval is required at the bottom of the form before it can be processed." },
+
+  // ── 15 NEW QUESTIONS ──
+
+  { cat:"🏦 Accounts Receivable", badge:"badge-ar",
+    scenario:"You're scanning checks in ClickPay. You've finished entering all checks and verified the amounts.",
+    question:"What is the correct next step after closing the batch?",
+    options:["Immediately shred the physical checks","File checks in the scanned-in check folder and check the following day around 10am to confirm processing","Email a confirmation to the homeowner","Call the bank to verify routing numbers"], correct:1,
+    explanation:"After closing the batch, add the checks to the 'scanned in check' folder, then check back the following day around 10am. Once processed, write the processing date on the check." },
+
+  { cat:"🏦 Accounts Receivable", badge:"badge-ar",
+    scenario:"You're about to scan a personal check in ClickPay RemitClient.",
+    question:"Which check type do you select for a personal check vs. a cashier's check?",
+    options:["Both use Remote Bank Check","Remote Check ONLY for personal; Remote Bank Check for cashier's","Both use Remote Check ONLY","Remote Bank Check for personal; Remote Check for cashier's"], correct:1,
+    explanation:"Personal checks use 'Remote Check ONLY.' Cashier's checks use 'Remote Bank Check.' Selecting the wrong type is a processing error." },
+
+  { cat:"🏦 Accounts Receivable", badge:"badge-ar",
+    scenario:"You're entering a check amount in RemitClient and notice the system is displaying it differently than what's written on the check.",
+    question:"What known quirk should you watch for when verifying the amount?",
+    options:["The system rounds to the nearest dollar","The system adds a comma to the amount","The system drops the cents","The system converts to a negative number"], correct:1,
+    explanation:"The system adds a comma to the amount. Always toggle back and forth between account info and the amount field to verify accuracy before closing the batch." },
+
+  { cat:"📋 Leases & Renewals", badge:"badge-lease",
+    scenario:"You've just added a new tenant to KWIC. You're now setting up their profile.",
+    question:"What User Type must you select when adding a tenant in KWIC?",
+    options:["Owner","Resident","Tenant","Occupant"], correct:2,
+    explanation:"When adding a new tenant in KWIC under Residents > Add User, the User Type must be set to Tenant — not Owner or Resident." },
+
+  { cat:"📋 Leases & Renewals", badge:"badge-lease",
+    scenario:"You've added a tenant to Zuul Systems. Before finishing their profile, there's one critical piece of information you must include.",
+    question:"What must you add to the 'Special Instructions' field in Zuul?",
+    options:["The tenant's emergency contact","That they are a tenant and the lease term dates","Their vehicle color and plate number","Their ClickPay account number"], correct:1,
+    explanation:"In Zuul Systems, you must add to Special Instructions that the resident is a tenant AND include their lease term dates. This is a required step — don't skip it." },
+
+  { cat:"📋 Leases & Renewals", badge:"badge-lease",
+    scenario:"How should a lease application document be titled when uploading to KWIC?",
+    question:"What is the correct naming format for a lease application in KWIC Documents?",
+    options:["Address + Lease Application","Last Name(s) and Lease Term Dates Application","Last Name + Year Application","Tenant Name + Move-In Date"], correct:1,
+    explanation:"The naming format is: Last Name(s) and Lease Term Dates Application — e.g., 'Johnson 01-01-2025 to 12-31-2025 Application.'" },
+
+  { cat:"⚠️ Violations", badge:"badge-viol",
+    scenario:"You're assembling the jury packets for a Fine Hearing Meeting. You have the 1st and 2nd letters, and communication records.",
+    question:"What is the 4th and final item that must be in each jury packet?",
+    options:["A copy of the Rules and Regulations","The homeowner's ledger","A photo of the violation taken the DAY of the Fine Hearing Meeting","The original complaint form"], correct:2,
+    explanation:"The 4th packet item is a photo of the violation taken on the day of the Fine Hearing Meeting itself — not an old photo. This is a hard requirement." },
+
+  { cat:"⚠️ Violations", badge:"badge-viol",
+    scenario:"You're printing documents to go into a violation packet.",
+    question:"What is the rule about how documents must be printed for packets?",
+    options:["Double-sided printing is required to save paper","All papers must be on 1 page — do NOT print front and back","Color printing is required for photos","Documents must be stapled in the top left corner"], correct:1,
+    explanation:"All papers going into the packet must be printed on 1 page — front and back (double-sided) printing is NOT allowed for violation packets." },
+
+  { cat:"⚠️ Violations", badge:"badge-viol",
+    scenario:"After a Fine Hearing Meeting, the jury approved fines for several addresses. You've sent the 3rd letters. What else must you do?",
+    question:"What two administrative tasks must be completed after the jury approves a fine?",
+    options:["Email the resident and update Vantaca","Fill out the Authorized Unit Charges form, create a ticket in Lynk, AND make sure the fine is on the ledger","Send a 4th warning letter and close the violation","Update KWIC and notify the manager by email"], correct:1,
+    explanation:"After jury approval: fill out the Authorized Unit Charges form, create a ticket in Lynk, and confirm the fine has been posted to the ledger. All three steps are required." },
+
+  { cat:"⚠️ Violations", badge:"badge-viol",
+    scenario:"Before the Fine Hearing Meeting starts, you need to run through some housekeeping.",
+    question:"What must you do before the meeting begins?",
+    options:["Confirm Zoom link is working","Do the Management Report covering violations that have been cured","Read all 2nd letters aloud","Distribute packets to the audience first"], correct:1,
+    explanation:"Before the meeting starts, complete the Management Report that covers violations which have been cured. This keeps the meeting organized and the jury informed before any cases are heard." },
+
+  { cat:"💰 Fees & Applications", badge:"badge-fees",
+    scenario:"You're processing application fees in ClickPay. You're at the Comments field.",
+    question:"What information must you write in the Comments field?",
+    options:["The applicant's date of birth","All fees being charged — processing, background check, car transponder(s) if applicable","The homeowner's ledger balance","The lease start and end dates"], correct:1,
+    explanation:"In the Comments field, write out ALL fees being charged: processing fee, background check fee, and car transponder fee(s) if applicable. This creates a clear record of what was collected." },
+
+  { cat:"💰 Fees & Applications", badge:"badge-fees",
+    scenario:"You're running a background check in Brown's Background Check system. You click 'Request' and see a default check type already selected.",
+    question:"What is the default background check type, and should you change it?",
+    options:["Credit and Employment — change it to Criminal only","Criminal, Evictions, and SS Validation — keep this default","Criminal only — add Evictions manually","SS Validation only — add Criminal separately"], correct:1,
+    explanation:"The default is 'Criminal, Evictions, and SS Validation' — always continue with this option. Do not change it." },
+
+  { cat:"🏠 Sales Applications", badge:"badge-sales",
+    scenario:"A real estate agent emails asking if the Certificate of Sale Approval is ready. You've just gotten it signed.",
+    question:"Who do you email the Certificate of Approval to for a sale?",
+    options:["The new homeowner only","The BOD President for final review","All parties on the application — new homeowners, real estate agent, title/loan company","Only the title company"], correct:2,
+    explanation:"Email the Certificate of Approval to ALL parties listed on the application: new homeowners, real estate agent, and the title/loan company. This email is for closing purposes." },
+
+  { cat:"🏠 Sales Applications", badge:"badge-sales",
+    scenario:"You've received the Warranty Deed after a sale closes. What system actions are now required?",
+    question:"After receiving the Warranty Deed or Settlement Statement, what must you do in the system?",
+    options:["Upload it to KWIC Documents and email it to the homeowner","Create a ticket in Lynk, add the document to KWIC Documents, and update the new homeowner's contact info once the account transfers","Upload to Zuul only","File it physically — no system action required"], correct:1,
+    explanation:"After receiving the Warranty Deed or Settlement Statement: create a Lynk ticket, add the document to KWIC Documents, and once the account transfers, update the new homeowner's phone number and email." },
+
+  { cat:"📋 Leases & Renewals", badge:"badge-lease",
+    scenario:"A homeowner calls upset, saying their tenant was denied entry at the gate. You check Zuul and see the lease renewal was processed but the date was never extended.",
+    question:"What should have been done in Zuul for a lease renewal?",
+    options:["Delete the tenant and re-add them","Extend the lease date in Zuul Systems","Create a new Zuul profile with the new lease dates","Change the user type from Tenant to Resident"], correct:1,
+    explanation:"For a lease renewal in Zuul Systems, you must extend the date — not delete and re-add. Failing to do this is what causes gate access issues for renewed tenants." },
+
+  { cat:"💰 Fees & Applications", badge:"badge-fees",
+    scenario:"A resident calls asking about the background check. They want to know what it covers.",
+    question:"What three things does the standard background check at Brown's cover?",
+    options:["Credit, Employment, and Criminal","Criminal, Evictions, and SS Validation","Evictions, Credit, and Employment","Criminal, Drug Test, and SS Validation"], correct:1,
+    explanation:"The standard background check through Brown's Background Checks covers Criminal history, Evictions, and SS (Social Security) Validation. This is the default option used for all applications." },
+
+  // ── COMMUNITY POLICIES ──
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A real estate agent calls asking if they can place open house signs around the Village Walk community on a Saturday.",
+    question:"Where are open house signs permitted, and during what hours?",
+    options:["Anywhere in the community, any day 8am–6pm","At the Vanderbilt Beach Road entrance only, plus the corner of the specific street and in front of the property — Saturdays and Sundays 9am–4pm","Only in front of the home being sold, any day","At the entrance gate only, weekdays 9am–5pm"], correct:1,
+    explanation:"Signs are allowed at 3 locations: Vanderbilt Beach Road entrance, the corner of Village Walk Circle and the open house street, and directly in front of the property. Only 1 sign per location per agent. Open houses are permitted Saturdays and Sundays from 9am to 4pm only." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A real estate agent asks if they can place open house signs on multiple streets throughout the community to direct traffic.",
+    question:"How many signs is each agent/agency permitted per location?",
+    options:["As many as needed to direct traffic","3 signs total anywhere they choose","One sign per each of the 3 permitted locations only","Two signs per location"], correct:2,
+    explanation:"Only one sign per each of the three permitted locations is allowed per agent/agency/owner. Signs outside those locations are not permitted." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A resident wants to pick up trash for their neighbor on a Wednesday. They ask you when trash is picked up.",
+    question:"What are the trash and recycling pick-up days at Village Walk?",
+    options:["Monday and Friday","Tuesday and Thursday","Wednesday and Saturday","Monday, Wednesday, and Friday"], correct:2,
+    explanation:"Trash is picked up on Wednesdays and Saturdays. Yard debris is picked up Monday, Wednesday, and Friday. Barrels should be placed at the foot of the driveway after 6pm the evening before pickup." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A resident asks when they should put their trash barrel out and when it may be picked up.",
+    question:"When should barrels be placed out, and what is the pickup window?",
+    options:["Morning of pickup, collected by noon","After 6pm the evening before; pickup occurs between 6am and 6pm on the designated day","Anytime the day before; collected by 8am","Night before at midnight; collected by 10am"], correct:1,
+    explanation:"Barrels must be placed at the foot of the driveway after 6pm the day before pickup. Collection can occur anytime between 6am and 6pm on the pickup day." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A resident wants to dispose of an old refrigerator and a set of tires. They ask if they can put them out with regular trash.",
+    question:"Who should they contact for bulk items like appliances and tires?",
+    options:["Village Walk office — we coordinate pickup","BrightView landscaping","Collier County Waste Management at 239-252-2380","Morley's Towing of Naples"], correct:2,
+    explanation:"Bulk items like appliances, electronics, tires, and batteries must be arranged through Collier County Waste Management at 239-252-2380 or recycling@colliercountyfl.gov. The regular Village Walk trash service does not handle these." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A resident wants to rent tables and chairs from the community for a one-time event.",
+    question:"How much is the required damage deposit for table and chair rental, and who is it payable to?",
+    options:["$50, payable to Village Walk HOA","$80, payable to Village Walk Activities","$100, payable to Village Walk HOA","$500, payable to KW Property Management"], correct:1,
+    explanation:"A damage deposit of $80.00 (check) is required, payable to Village Walk Activities. It must be submitted at the time of rental." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A resident asks about renting the Town Hall downstairs and the grass area behind it for a party.",
+    question:"What is the total rental fee for Town Hall downstairs plus the back grass area?",
+    options:["$150","$200","$250","$350"], correct:2,
+    explanation:"Town Hall downstairs is $150 and the back grass area is $100, totaling $250. A separate $500 damage deposit check is also required for Town Hall use. All events must end by 10pm." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A resident is renting the Town Hall and asks about getting the keys.",
+    question:"When can a resident pick up the Town Hall keys, and when must they be returned?",
+    options:["Day of the event; returned same night","Day before or Friday before a weekend event; returned next business day after the event","One week before; returned one week after","Day of event; returned within 3 days"], correct:1,
+    explanation:"Keys may be picked up the day before the event, or Friday before a weekend event. They must be returned to the Village Walk office the next business day following the event. Lost keys result in locksmith charges held from the deposit." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A resident is registering their golf cart with the community.",
+    question:"How much does a golf cart registration sticker cost, and where must it be placed?",
+    options:["$5, anywhere visible on the cart","$10, lower driver's side windshield or driver's side hood/fender if no windshield","$25, rear bumper","Free, anywhere on the cart"], correct:1,
+    explanation:"Registration stickers cost $10 and must be placed on the lower driver's side windshield. If there is no windshield, it goes on the driver's side hood or fender. Handicap stickers are free with proof of qualification and go next to the registration sticker." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A golf cart owner sold their cart to a neighbor and wants to transfer the registration.",
+    question:"Can a golf cart registration be transferred to a new owner?",
+    options:["Yes, for a $5 transfer fee","Yes, transfers are free","No — registration is non-transferable; management must be notified to cancel and the new owner must re-register","Yes, just update the name in the office"], correct:2,
+    explanation:"Golf cart registration is non-transferable. If a cart is sold or transferred, management must be notified so the registration can be cancelled. The new owner must register separately and pay the $10 fee." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A golf cart owner asks when they need to provide proof of insurance.",
+    question:"When must golf cart owners provide proof of insurance, and what happens if they don't?",
+    options:["At time of registration only, no renewals needed","Annually by February 1st; failure results in registration termination and an additional $10 re-registration fee","Every 2 years; no penalty for late submission","Only if they are involved in an accident"], correct:1,
+    explanation:"Proof of insurance must be provided annually by February 1st. Failure results in termination of registration, requiring re-registration and an additional $10 fee. Coverage can be a specific golf cart policy or a rider on a homeowner/umbrella policy." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A resident asks if they can park their golf cart overnight in their driveway.",
+    question:"What is the overnight golf cart parking rule?",
+    options:["Overnight driveway parking is fine","Golf carts must be parked in a garage overnight","Golf carts can park anywhere on the property overnight","Overnight parking is only allowed in designated golf cart lots"], correct:1,
+    explanation:"Golf carts may park in residential driveways during the day, but overnight parking within a garage is required. Golf carts are also prohibited from parking on residential lawns at any time." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A resident asks about a temporary parking pass for their guest's vehicle.",
+    question:"Where is the temporary parking pass valid, and what parking is NOT permitted?",
+    options:["Valid anywhere in Village Walk; no restrictions","Valid in the Town Center parking lot only; overnight street parking is NOT permitted","Valid in any community lot; pool parking is restricted","Valid on residential streets only; Town Center parking is restricted"], correct:1,
+    explanation:"The temporary parking pass is valid in the Town Center parking lot ONLY. Overnight street parking is not permitted. The pass must be placed printed side up, unobstructed on the vehicle's windshield. Violations may result in towing by Morley's Towing at the owner's expense." },
+
+  { cat:"🏘️ Community Policies", badge:"badge-comm",
+    scenario:"A resident submits a HOA quarterly payment through their bank's online bill pay system and asks where to send it now that banking has changed.",
+    question:"What is the new mailing address for HOA payments sent via bank bill pay?",
+    options:["Village Walk HOA, 3200 Village Walk Cir, Naples FL 34109","Valley National Bank, PO Box 31600, Tampa FL 33631-3600","Truist Bank, PO Box 1000, Charlotte NC","KW Property Management, PO Box 5000, Naples FL 34109"], correct:1,
+    explanation:"For bill pay through your bank, the payment address must be updated to Valley National Bank, PO Box 31600, Tampa FL 33631-3600. ACH/autopay users do not need to take any action — it was already updated. Checks should still be made payable to Village Walk HOA of Naples." },
+
+  // ── ACC & ARCHITECTURE ──
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner wants to add a pool to their backyard and is asking what they need to do before starting.",
+    question:"What is required before beginning ANY exterior modification at Village Walk?",
+    options:["Just notify the office by email","Submit an ACC application and receive written approval before any work begins","Get neighbor approval and then proceed","Post a notice in the community newsletter"], correct:1,
+    explanation:"Approval from the ACC (Architectural Control Committee) is required PRIOR to starting any exterior modification. No work shall begin until written approval is received. This applies to pools, painting, landscaping, pavers, doors, and more." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner submits an ACC application on a Tuesday. When is the application deadline relative to the ACC meeting?",
+    question:"By when must ACC applications be submitted before the scheduled ACC meeting?",
+    options:["24 hours before the meeting","By 2:00 PM on Monday, 8 days prior to the scheduled ACC meeting","By the Friday before the meeting","At least 2 weeks before the meeting"], correct:1,
+    explanation:"ACC applications must be submitted to the office by 2:00 PM on Monday, 8 days before the scheduled ACC meeting. This applies to general ACC, exterior painting, and landscape change applications." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"An ACC application was approved. The homeowner hasn't started the work and it's been 7 months.",
+    question:"How long does a homeowner have to complete approved ACC changes?",
+    options:["3 months from approval","6 months from approval — must re-apply or notify the Town Manager if not completed","1 year from approval","No time limit once approved"], correct:1,
+    explanation:"Applicants have 6 months from the date of approval to complete all approved changes. If not finished in time, they must re-apply or notify the Town Manager explaining the delay." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner wants to excavate their yard to install a pool. What additional item is required with their ACC application?",
+    question:"What is required for applications involving excavation, concrete work, pavers, or whole roof replacement?",
+    options:["A letter from their contractor only","A $1,000 security deposit payable to Village Walk of Naples HOA","A neighbor signature of approval","Photos of the proposed work only"], correct:1,
+    explanation:"A $1,000 security deposit payable to Village Walk of Naples HOA is required for any application involving excavation, concrete work, pavers, or whole roof replacement. This is in addition to the standard application requirements." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner's ACC application was denied. They want to challenge the decision.",
+    question:"What is the process if a homeowner wants to appeal a denied ACC application?",
+    options:["They must resubmit a new application immediately","Appeal in writing to the Board of Directors within 30 days; the Board has 45 days to render a written decision","Call the office to dispute — no written appeal needed","Appeals are not permitted; the ACC decision is final"], correct:1,
+    explanation:"If disapproved by the ACC, the homeowner may appeal in writing to the Board of Directors within 30 days of the decision. The Board then has 45 days to render a written decision. Failure of the Board to respond within 45 days is deemed a decision in favor of the applicant." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner asks which paint colors are approved for exterior painting at Village Walk.",
+    question:"What is the rule about approved exterior paint color combinations?",
+    options:["Any color is acceptable as long as it's neutral","There are 4 approved combinations plus DiVosta original colors — approval required before painting","Homeowners can choose any Sherwin-Williams color","Only white and beige are permitted"], correct:1,
+    explanation:"There are 4 approved combinations (e.g., Combination #1: City Loft/Stone Lion/Gale Force) plus DiVosta original colors. An ACC painting application must be submitted and approved before any painting begins. No two abutting homes may have the same house color." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner asks what color their garage door and gutters must be painted.",
+    question:"What color must garage doors and gutters remain at all times?",
+    options:["Any approved trim color","City Loft SW7631","White","Stone Lion SW7507"], correct:2,
+    explanation:"Garage doors and gutters on ALL homes must remain white — this is non-negotiable regardless of what house color combination is chosen. Accent colors are only for front doors and garage window shutters." },
+
+  { cat:"🏗️ ACC & Architecture", badge:"badge-arch",
+    scenario:"A homeowner wants to do some landscaping changes and asks if they need approval first.",
+    question:"When is a Landscape Change Application required?",
+    options:["Only for major renovations over $5,000","For any private landscape renovation regardless of scope — prior written approval required before work begins","Only when using a contractor","Annual flowers in existing beds don't need approval, but any other landscape change does"], correct:3,
+    explanation:"Any private landscape renovation regardless of scope requires a Landscape Change Application and prior written approval. However, annual flowers planted by the homeowner in existing planting beds do not require approval. A plot plan and contractor proposal must accompany the application." },
+
+  // ── HOTW IRE SERVICES ──
+
+  { cat:"📡 HotWire Services", badge:"badge-hot",
+    scenario:"A resident calls asking what internet speeds are available through HotWire at Village Walk.",
+    question:"What are the three internet speed tiers offered by HotWire?",
+    options:["100 Mbps, 300 Mbps, 500 Mbps","500 Mbps, 750 Mbps, and Gigabit 1000 Mbps","250 Mbps, 500 Mbps, 1000 Mbps","300 Mbps, 600 Mbps, 900 Mbps"], correct:1,
+    explanation:"HotWire offers three internet tiers: High Speed Internet 500 (500 Mbps down/up), High Speed Internet 750 (750 Mbps down, 500 Mbps up), and Gigabit Internet 1000 (1000 Mbps down, 500 Mbps up)." },
+
+  { cat:"📡 HotWire Services", badge:"badge-hot",
+    scenario:"A resident asks whether they need to do anything about their HOA payment if they pay via autopay through ClickPay after the bank transition.",
+    question:"Do ACH/autopay users need to update anything after the bank transition to Valley National?",
+    options:["Yes — they must log into ClickPay and update their bank info","No — ACH and autopay information was already updated automatically","Yes — they must cancel and re-enroll in autopay","Yes — they must call Valley National directly to update"], correct:1,
+    explanation:"ACH payments set up through the Village Walk or ClickPay websites do not require any action from residents — the information was already updated. Only residents who pay through their own bank's bill pay system need to update the address." },
+
+  { cat:"📡 HotWire Services", badge:"badge-hot",
+    scenario:"A resident asks what premium cable add-on packages are available and how much they cost.",
+    question:"What is the monthly cost for premium add-on packages like STARZ, SHOWTIME, or CINEMAX?",
+    options:["$9.99/month each","$12.99/month each","$15.99/month each","$19.99/month each"], correct:2,
+    explanation:"STARZ, SHOWTIME, and CINEMAX are each $15.99/month. En Espanol is also $15.99/month. Israel Plus is $19.99/month. The Sports & Info Pack is $9.99/month." },
+
+  // ── AR FORMS ──
+
+  { cat:"📝 AR Forms", badge:"badge-forms",
+    scenario:"A homeowner overpaid their HOA assessment and is owed a refund. You need to process this.",
+    question:"What form do you use to request a refund check for an overpayment?",
+    options:["Late Fee Waiver Form","Authorized Unit Charges Form","AR Check Requisition Form","Check Transmittal Log"], correct:2,
+    explanation:"The AR Check Requisition Form is used to request a check from Corporate for situations like credit balances due to overpayment, checks submitted while enrolled in ACH, or owner not cancelling ACH after a sale. The completed form goes to the Accounts Receivables Associate." },
+
+  { cat:"📝 AR Forms", badge:"badge-forms",
+    scenario:"A property manager wants to waive $120 in late fees for a resident. You receive the Late Fee Waiver Form.",
+    question:"What additional step is required when waiving late fees in excess of $100?",
+    options:["No additional steps — the property manager can approve any amount","Board of Director approval must be obtained","KW Corporate office must be notified","Two manager signatures are required"], correct:1,
+    explanation:"If waiving late fees in excess of $100, Board of Director approval must be obtained. The form also requires attaching a copy of the resident's ledger with the late fees circled. Completed forms are sent to the Accounts Receivables Associate." },
+
+  { cat:"📝 AR Forms", badge:"badge-forms",
+    scenario:"After a Fine Hearing Meeting, the jury approved a fine for a resident. You need to charge it to their account.",
+    question:"What form is used to charge an owner's account for expenses other than regular assessments?",
+    options:["AR Check Requisition Form","Late Fee Waiver Form","Authorized Unit Charges Form","Check Transmittal Log"], correct:2,
+    explanation:"The Authorized Unit Charges Form is used to charge an owner's account for items outside of regular assessments — such as jury-approved fines. Supporting documentation (meeting minutes, resolutions, invoices) must be attached. If no documentation is provided, Board approval is required at the bottom of the form." },
+
+  { cat:"📝 AR Forms", badge:"badge-forms",
+    scenario:"You're filling out an Authorized Unit Charges form after a fine hearing. The manager asks what documentation you need to attach.",
+    question:"What supporting documentation must be submitted with the Authorized Unit Charges form?",
+    options:["No documentation needed if the amount is under $500","A copy of all supporting documentation — such as meeting minutes, resolutions, or invoices. If none available, Board approval is required","Only the resident's ledger","Just the property manager's written approval"], correct:1,
+    explanation:"A copy of ALL supporting documentation must be submitted with the form — this includes Committee or Board meeting minutes, resolutions, or invoices. If no supporting documentation is provided, Board Member approval must be obtained and signed at the bottom of the form." },
+];
+
+const ALL_CATS = ["All", "💰 Fees & Applications", "📋 Leases & Renewals", "⚠️ Violations", "🏦 Accounts Receivable", "🏠 Sales Applications", "🏘️ Community Policies", "🏗️ ACC & Architecture", "📡 HotWire Services", "📝 AR Forms"];
+
+let state = {
+  filter: "All",
+  pool: [],
+  current: 0,
+  selected: null,
+  revealed: false,
+  score: 0,
+  answers: [],
+  finished: false
+};
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function getPool(filter) {
+  const qs = filter === "All" ? questions : questions.filter(q => q.cat === filter);
+  return shuffle(qs);
+}
+
+function init() {
+  state.pool = getPool(state.filter);
+  state.current = 0; state.selected = null; state.revealed = false;
+  state.score = 0; state.answers = []; state.finished = false;
+  render();
+}
+
+function setFilter(f) {
+  state.filter = f;
+  init();
+}
+
+function selectOption(i) {
+  if (state.revealed) return;
+  state.selected = i;
+  state.revealed = true;
+  const q = state.pool[state.current];
+  const correct = i === q.correct;
+  if (correct) state.score++;
+  state.answers.push({ question: q.question, cat: q.cat, correct });
+  render();
+}
+
+function next() {
+  if (state.current + 1 >= state.pool.length) { state.finished = true; }
+  else { state.current++; state.selected = null; state.revealed = false; }
+  render();
+}
+
+function renderFilters() {
+  const el = document.getElementById("filters");
+  el.innerHTML = ALL_CATS.map(cat =>
+    `<button class="filter-btn${state.filter === cat ? " active" : ""}" onclick="setFilter('${cat.replace(/'/g,"\\'")}')">
+      ${cat === "All" ? "All Topics" : cat}
+    </button>`
+  ).join("");
+}
+
+function render() {
+  renderFilters();
+  const card = document.getElementById("card");
+  const pool = state.pool;
+
+  if (state.finished || pool.length === 0) {
+    const pct = pool.length ? Math.round((state.score / pool.length) * 100) : 0;
+    const cls = pct >= 80 ? "score-green" : pct >= 60 ? "score-amber" : "score-red";
+    const msg = pct >= 80 ? "🎉 Strong work — you know this material!" : pct >= 60 ? "📚 Getting there — review the ones you missed." : "🔄 Keep practicing — this is what the quiz is for!";
+    card.innerHTML = `
+      <div class="results">
+        <div class="big-score ${cls}">${pct}%</div>
+        <p class="result-sub">You got <strong>${state.score}</strong> of <strong>${pool.length}</strong> correct</p>
+        <p class="result-msg">${msg}</p>
+        <div class="answer-list">
+          ${state.answers.map(a => `
+            <div class="answer-item ${a.correct ? "ok" : "err"}">
+              <span class="answer-icon">${a.correct ? "✅" : "❌"}</span>
+              <span><span class="answer-cat">${a.cat}:</span> ${a.question}</span>
+            </div>`).join("")}
+        </div>
+        <button class="restart-btn" onclick="init()">Try Again 🔄</button>
+      </div>`;
+    return;
+  }
+
+  const q = pool[state.current];
+  const pct = ((state.current + 1) / pool.length * 100).toFixed(1);
+
+  card.innerHTML = `
+    <div class="progress-row">
+      <span class="badge ${q.badge}">${q.cat}</span>
+      <span class="score-text">${state.current + 1} / ${pool.length} &bull; Score: ${state.score}</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+
+    <div class="scenario-box">
+      <div class="scenario-label">Scenario</div>
+      <div class="scenario-text">${q.scenario}</div>
+    </div>
+
+    <div class="question">${q.question}</div>
+
+    <div class="options">
+      ${q.options.map((opt, i) => {
+        let cls = "";
+        if (state.revealed) {
+          if (i === q.correct) cls = "correct";
+          else if (i === state.selected && i !== q.correct) cls = "wrong";
+          else cls = "dimmed";
+        }
+        return `<button class="option-btn ${cls}" onclick="selectOption(${i})" ${state.revealed ? "disabled" : ""}>
+          <span class="letter">${["A","B","C","D"][i]}.</span>${opt}
+        </button>`;
+      }).join("")}
+    </div>
+
+    ${state.revealed ? `
+      <div class="explanation">
+        <div class="explanation-label ${state.selected === q.correct ? "ok" : "err"}">
+          ${state.selected === q.correct ? "✅ Correct!" : "❌ Not quite —"}
+        </div>
+        <div class="explanation-text">${q.explanation}</div>
+      </div>
+      <button class="next-btn" onclick="next()">
+        ${state.current + 1 >= pool.length ? "See My Results →" : "Next Question →"}
+      </button>` : ""}
+  `;
+}
+
+init();
+</script>
+</body>
+</html>
